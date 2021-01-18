@@ -1,17 +1,9 @@
 """
 Inspired by John King (https://github.com/jfking50)
 """
+%%time
 import gym
 env = gym.make('MountainCar-v0')
-
-observation = env.reset()
-print("observation:", observation)
-for t in range(5):
-    action = env.action_space.sample()
-    print("action:", action)
-    observation, reward, done, info = env.step(action)
-    print("step results:", observation, reward, done, info)
-env.close()
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
@@ -39,14 +31,15 @@ class DQNagent:
 
     def __init__(self, state_size, action_size, episodes):
         self.gamma = 0.95
-        self.batch_size = 64
+        self.batch_size = 10 #64
         self.state_size = state_size
         self.action_size = action_size
         self.episodes = episodes
         self.replay_memory = deque(maxlen=2000)
-        self.optimizer = tf.keras.optimizers.Adam(lr=0.001)
+        self.optimizer = tf.keras.optimizers.Adam(lr=0.001) #use Adaptive Moment Estimation optimizer
         self.loss_fn = tf.keras.losses.mean_squared_error
 
+    #Build neural network
     def build_model(self):
         model = tf.keras.models.Sequential([
             tf.keras.layers.Dense(32, activation="relu", input_shape=[self.state_size]),
@@ -54,10 +47,12 @@ class DQNagent:
             tf.keras.layers.Dense(self.action_size)
         ])
         return model
-
+    
+    #Storing information about every step. ie replay memory
     def add_memory(self, state, action, reward, next_state, done):
         self.replay_memory.append((state, action, reward, next_state, done))
-
+        
+    #Implement training using memory replay from sampled experience, not full set
     def sample_experiences(self):
         indices = np.random.randint(len(self.replay_memory), size=self.batch_size)
         batch = [self.replay_memory[index] for index in indices]
@@ -65,7 +60,8 @@ class DQNagent:
             np.array([experience[field_index] for experience in batch])
             for field_index in range(5)]
         return states, actions, rewards, next_states, dones
-
+    
+    
     def train_model(self, model):
         states, actions, rewards, next_states, dones = self.sample_experiences()
         next_Q_values = model.predict(next_states)
@@ -80,50 +76,6 @@ class DQNagent:
         grads = tape.gradient(loss, model.trainable_variables)
         self.optimizer.apply_gradients(zip(grads, model.trainable_variables))
         
-
-
-best_score = 200
-episodes = 600 #2000
-env = gym.make('MountainCar-v0')
-state_size = env.observation_space.shape[0]
-action_size = env.action_space.n
-agent = DQNagent(state_size, action_size, episodes)
-model = agent.build_model()
-rewards = []
-
-for episode in range(episodes):
-    state = env.reset()    
-    for step in range(200):
-        epsilon = max(1 - episode/(episodes*0.8), 0.01)
-        if np.random.rand() < epsilon: action = np.random.randint(action_size)
-        else: action = np.argmax(model.predict(state[np.newaxis])[0])
-        next_state, reward, done, info = env.step(action)
-        if next_state[0] - state[0] > 0 and action == 2: reward = 1
-        if next_state[0] - state[0] < 0 and action == 0: reward = 1        
-        agent.add_memory(state, action, reward, next_state, done)
-        state = next_state.copy()
-        if done:
-            break
-    rewards.append(step)
-    if step < best_score:
-        best_weights = model.get_weights()
-        best_score = step
-    print("\rEpisode: {}, Best Score: {}, eps: {:.3f}".format(episode, best_score, epsilon), end="")
-    if episode > 50:
-        agent.train_model(model)
-
-model.set_weights(best_weights)
-
-env.close()
-
-plt.figure(figsize=(8, 4))
-plt.plot(rewards)
-plt.xlabel("Episode", fontsize=14)
-plt.ylabel("Score", fontsize=14)
-plt.show()
-
-
-
 def render_policy_net(model, n_max_steps=200, seed=42):
     frames = []
     env = gym.make('MountainCar-v0')
@@ -153,5 +105,50 @@ def plot_animation(frames, repeat=False, interval=40):
     plt.close()
     return anim
 
-frames = render_policy_net(model)
-plot_animation(frames)
+#frames = render_policy_net(model)
+#plot_animation(frames)
+
+best_score = 200
+episodes = 600 #2000
+env = gym.make('MountainCar-v0')
+state_size = env.observation_space.shape[0]
+action_size = env.action_space.n
+agent = DQNagent(state_size, action_size, episodes)
+model = agent.build_model()
+rewards = []
+
+for episode in range(episodes):
+    state = env.reset()    
+    for step in range(200):
+        epsilon = max(1 - episode/(episodes*0.8), 0.01) #epsilon take value between [0.1,1]
+        if np.random.rand() < epsilon: action = np.random.randint(action_size) # if random no. < epsilon, take random sample
+        else: action = np.argmax(model.predict(state[np.newaxis])[0]) # else take the best action
+        next_state, reward, done, info = env.step(action)
+        if next_state[0] - state[0] > 0 and action == 2: reward = 1 # if moved right & push right, reward +1
+        if next_state[0] - state[0] < 0 and action == 0: reward = 1 # if moved left & push left, reward +1       
+        agent.add_memory(state, action, reward, next_state, done)
+        state = next_state.copy()
+        if done:
+            break
+    rewards.append(step)
+    if step < best_score:
+        best_weights = model.get_weights()
+        best_score = step
+    
+    print("\rEpisode: {}, Best Score: {}, eps: {:.3f}".format(episode, best_score, epsilon), end="") #\r
+    
+    if episode in np.arange(0, episodes, 50): #plot the animation every 50 episodes
+        plot_animation(render_policy_net(model))
+    
+    if episode > 50:
+        agent.train_model(model)
+
+model.set_weights(best_weights)
+
+env.close()
+
+plt.figure(figsize=(8, 4))
+plt.plot(rewards)
+plt.xlabel("Episode", fontsize=14)
+plt.ylabel("Score", fontsize=14)
+plt.show()
