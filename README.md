@@ -22,17 +22,17 @@ Tensorflow  2.3.0
 
 ### Output
 Below are some of the outputs obtained by switching the parameters.
-* Original: 32 nodes, 600 episodes, batch size = 64
+* Original: 32 nodes, 600 episodes, batch size = 64\
 ![alt text](https://github.com/ElaineSee/WOA7014_mini_project/blob/main/600epi_relu_32.PNG?raw=true)
 
-* Alter to 64 nodes
+* Alter to 64 nodes\
 ![alt text](https://github.com/ElaineSee/WOA7014_mini_project/blob/main/Nodes%2064.PNG?raw=true)
 
-* Alter to batch size = 10
+* Alter to batch size = 10\
 ![alt text](https://github.com/ElaineSee/WOA7014_mini_project/blob/main/Batch%20size%2010.PNG?raw=true)
 
-* Alter to 2000 episodes
-![alt text](https://github.com/ElaineSee/WOA7014_mini_project/blob/main/Episodes%202000.PNG.PNG?raw=true)
+* Alter to 2000 episodes\
+![alt text](https://github.com/ElaineSee/WOA7014_mini_project/blob/main/Episodes%202000.PNG?raw=true)
 
 ### Credit
 This program is inspired by John King (https://jfking50.github.io/mountaincar/)
