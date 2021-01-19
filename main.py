@@ -2,6 +2,18 @@
 Inspired by John King (https://github.com/jfking50)
 """
 %%time
+
+#To see random steps & output
+#observation = env.reset()
+#print("observation:", observation)
+#for t in range(5):
+#    action = env.action_space.sample()
+#    print("action:", action)
+#    observation, reward, done, info = env.step(action)
+#    print("step results:", observation, reward, done, info)
+#env.close()
+
+
 import gym
 env = gym.make('MountainCar-v0')
 import numpy as np
@@ -50,7 +62,7 @@ class DQNagent:
     
     #Storing information about every step. ie replay memory
     def add_memory(self, state, action, reward, next_state, done):
-        self.replay_memory.append((state, action, reward, next_state, done))
+        self.replay_memory.append((state, action, reward, next_state, done)) #done takes True or False, showing if car has reached the goal
         
     #Implement training using memory replay from sampled experience, not full set
     def sample_experiences(self):
@@ -61,12 +73,12 @@ class DQNagent:
             for field_index in range(5)]
         return states, actions, rewards, next_states, dones
     
-    
+    #Train model using experience replay
     def train_model(self, model):
         states, actions, rewards, next_states, dones = self.sample_experiences()
         next_Q_values = model.predict(next_states)
         max_next_Q_values = np.max(next_Q_values, axis=1)
-        target_Q_values = (rewards + (1 - dones) * self.gamma * max_next_Q_values)
+        target_Q_values = (rewards + (1 - dones) * self.gamma * max_next_Q_values) #Update the Q-value
         target_Q_values = target_Q_values.reshape(-1, 1)
         mask = tf.one_hot(actions, self.action_size)
         with tf.GradientTape() as tape:
@@ -75,7 +87,8 @@ class DQNagent:
             loss = tf.reduce_mean(self.loss_fn(target_Q_values, Q_values))
         grads = tape.gradient(loss, model.trainable_variables)
         self.optimizer.apply_gradients(zip(grads, model.trainable_variables))
-        
+
+#render the environment to visualise the steps
 def render_policy_net(model, n_max_steps=200, seed=42):
     frames = []
     env = gym.make('MountainCar-v0')
