@@ -43,7 +43,7 @@ class DQNagent:
 
     def __init__(self, state_size, action_size, episodes):
         self.gamma = 0.95
-        self.batch_size = 10 #64
+        self.batch_size = 64
         self.state_size = state_size
         self.action_size = action_size
         self.episodes = episodes
@@ -118,11 +118,8 @@ def plot_animation(frames, repeat=False, interval=40):
     plt.close()
     return anim
 
-#frames = render_policy_net(model)
-#plot_animation(frames)
-
 best_score = 200
-episodes = 600 #2000
+episodes = 600 
 env = gym.make('MountainCar-v0')
 state_size = env.observation_space.shape[0]
 action_size = env.action_space.n
